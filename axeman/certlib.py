@@ -1,6 +1,6 @@
 import base64
 import math
-
+import logging
 import datetime
 from collections import OrderedDict
 
@@ -136,14 +136,22 @@ def dump_cert(certificate):
     subject = certificate.get_subject()
 
     try:
-        not_before = datetime.datetime.strptime(certificate.get_notBefore().decode('ascii'), "%Y%m%d%H%M%SZ").timestamp()
-    except:
+        not_before_dt = datetime.datetime.strptime(certificate.get_notBefore().decode('ascii'), "%Y%m%d%H%M%SZ").replace(tzinfo=datetime.timezone.utc)
+        not_before = not_before_dt.timestamp()     # e.g. 1585742400.0
+        not_before_iso = not_before_dt.isoformat() # e.g. 2017-03-28T00:00:00+00:00
+    except Exception as E:
+        logging.error("Exception {} processing not before timestamp on certificate: {}".format(E, str(certificate.digest("sha1"), encoding='utf-8')))
         not_before = 0
+        not_before_iso = 0
 
     try:
-        not_after = datetime.datetime.strptime(certificate.get_notAfter().decode('ascii'), "%Y%m%d%H%M%SZ").timestamp()
-    except:
+        not_after_dt = datetime.datetime.strptime(certificate.get_notAfter().decode('ascii'), "%Y%m%d%H%M%SZ").replace(tzinfo=datetime.timezone.utc)
+        not_after = not_after_dt.timestamp()
+        not_after_iso = not_after_dt.isoformat()
+    except Exception as E:
+        logging.error("Exception {} processing not after timestamp on certificate: {}".format(E, str(certificate.digest("sha1"), encoding='utf-8')))
         not_after = 0
+        not_after_iso = 0
 
     return {
         "subject": {
@@ -158,6 +166,8 @@ def dump_cert(certificate):
         "extensions": dump_extensions(certificate),
         "not_before": not_before,
         "not_after": not_after,
+        "not_before_iso": not_before_iso,
+        "not_after_iso": not_after_iso,
         "as_der": base64.b64encode(crypto.dump_certificate(crypto.FILETYPE_ASN1, certificate)).decode('utf-8'),
         "fingerprint_sha1": str(certificate.digest("sha1"), encoding='utf-8')
     }
