@@ -134,6 +134,7 @@ def add_all_domains(cert_data):
 
 def dump_cert(certificate):
     subject = certificate.get_subject()
+    issuer = certificate.get_issuer()
 
     try:
         not_before_dt = datetime.datetime.strptime(certificate.get_notBefore().decode('ascii'), "%Y%m%d%H%M%SZ").replace(tzinfo=datetime.timezone.utc)
@@ -162,6 +163,12 @@ def dump_cert(certificate):
             "O": subject.O,
             "OU": subject.OU,
             "CN": subject.CN
+        },
+        "issuer": {
+            "aggregated": repr(certificate.get_issuer())[18:-2],
+            "O": issuer.O,
+            "OU": issuer.OU,
+            "CN": issuer.CN
         },
         "extensions": dump_extensions(certificate),
         "not_before": not_before,
